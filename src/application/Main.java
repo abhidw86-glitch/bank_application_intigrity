@@ -8,6 +8,7 @@ import javafx.scene.layout.*;
 import javafx.stage.Stage;
 
 import java.util.ArrayList;
+import javafx.concurrent.Task;
 
 // Main class 
 public class Main extends Application {
@@ -19,6 +20,7 @@ public class Main extends Application {
     // Shared UI pieces
     private ComboBox<BankAccount> accountCombo;
     private TextArea statusArea;
+    private FoundryAgentClient foundryAgentClient;
 
   
     public static void main(String[] args) {
@@ -38,7 +40,8 @@ public class Main extends Application {
                 new Tab("Create Account",      buildCreatePane()),
                 new Tab("Deposit / Withdraw",  buildTransactionPane()),
                 new Tab("View Accounts",       buildViewPane()),
-                new Tab("Transaction History", buildHistoryPane())
+                new Tab("Transaction History", buildHistoryPane()),
+                new Tab("AI Assistant",         buildAssistantPane())
         );
 
         statusArea = new TextArea();
@@ -299,6 +302,59 @@ public class Main extends Application {
         return box;
     }
 
+    // TAB 5 - Chat with the configured Azure AI Foundry agent
+    private Pane buildAssistantPane() {
+        VBox box = new VBox(10);
+        box.setPadding(new Insets(20));
+
+        TextArea chatArea = new TextArea();
+        chatArea.setEditable(false);
+        chatArea.setWrapText(true);
+        chatArea.setPromptText("The agent conversation will appear here...");
+
+        TextField messageField = new TextField();
+        messageField.setPromptText("Ask the banking agent a question...");
+        Button sendButton = new Button("Send");
+
+        Runnable send = () -> {
+            String message = messageField.getText().trim();
+            if (message.isEmpty()) return;
+            messageField.clear();
+            sendButton.setDisable(true);
+            chatArea.appendText("You: " + message + "\n");
+
+            Task<String> task = new Task<>() {
+                @Override
+                protected String call() throws Exception {
+                    if (foundryAgentClient == null) {
+                        foundryAgentClient = new FoundryAgentClient();
+                    }
+                    return foundryAgentClient.sendMessage(message);
+                }
+            };
+            task.setOnSucceeded(e -> {
+                chatArea.appendText("Agent: " + task.getValue() + "\n\n");
+                sendButton.setDisable(false);
+            });
+            task.setOnFailed(e -> {
+                Throwable error = task.getException();
+                chatArea.appendText("Agent error: " + error.getMessage() + "\n\n");
+                sendButton.setDisable(false);
+            });
+            Thread agentThread = new Thread(task, "azure-foundry-agent");
+            agentThread.setDaemon(true);
+            agentThread.start();
+        };
+        sendButton.setOnAction(e -> send.run());
+        messageField.setOnAction(e -> send.run());
+
+        HBox input = new HBox(10, messageField, sendButton);
+        HBox.setHgrow(messageField, Priority.ALWAYS);
+        box.getChildren().addAll(new Label("Azure AI Foundry assistant"), chatArea, input);
+        VBox.setVgrow(chatArea, Priority.ALWAYS);
+        return box;
+    }
+
     // Helpers
     private void refreshCombo() {
         if (accountCombo == null) return;
@@ -312,4 +368,4 @@ public class Main extends Application {
     private void log(String message) {
         statusArea.appendText(message + "\n");
     }
-}
+}

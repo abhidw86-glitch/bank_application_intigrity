@@ -31,6 +31,7 @@ Review recorded deposits and withdrawals through the application's transaction h
 - Deposit and withdraw funds
 - View account balances and account information
 - Record and display transaction history
+- Chat with an Azure AI Foundry agent
 - Validate transactions based on account requirements
 - Handle insufficient balances using a custom exception
 - Navigate the application through a JavaFX graphical user interface
@@ -57,6 +58,18 @@ Review recorded deposits and withdrawals through the application's transaction h
 3. Configure the project to use JDK 21.
 4. Add the JavaFX SDK `lib` folder to the project's module path.
 5. Run `Main.java` located in `src/application/`.
+
+### Azure AI Foundry assistant
+
+The **AI Assistant** tab uses an Azure AI Foundry prompt agent through its project REST API. Set these environment variables before starting the app:
+
+```text
+AZURE_AI_PROJECT_ENDPOINT=https://<resource>.services.ai.azure.com/api/projects/<project-name>
+AZURE_AI_AGENT_ID=<agent-id>
+AZURE_AI_TOKEN=Bearer <Microsoft Entra access token>
+```
+
+You can use `AZURE_AI_API_KEY` instead of `AZURE_AI_TOKEN` when your project supports API-key authentication. The client creates one conversation thread per message session and runs the configured agent asynchronously so the JavaFX UI remains responsive.
 
 If JavaFX is not configured automatically, add the following VM arguments and replace the path with the location of your JavaFX SDK:
 
