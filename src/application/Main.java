@@ -153,6 +153,7 @@ public class Main extends Application {
 
         Button depositBtn  = new Button("Deposit");
         Button withdrawBtn = new Button("Withdraw");
+        Button deleteBtn   = new Button("Delete Account");
 
         depositBtn.setOnAction(e -> {
             BankAccount acct = accountCombo.getValue();
@@ -192,7 +193,31 @@ public class Main extends Application {
             }
         });
 
-        HBox buttons = new HBox(10, depositBtn, withdrawBtn);
+        deleteBtn.setOnAction(e -> {
+            BankAccount acct = accountCombo.getValue();
+            if (acct == null) {
+                log("✗ Please select an account.");
+                return;
+            }
+
+            Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
+            confirmation.setTitle("Delete Account");
+            confirmation.setHeaderText("Delete account #" + acct.getAccountNumber() + "?");
+            confirmation.setContentText("This will remove the account from SmartBank.");
+
+            confirmation.showAndWait().ifPresent(response -> {
+                if (response == ButtonType.OK) {
+                    transactions.add(new Transaction(
+                            acct.getAccountNumber(), "CLOSE", acct.getBalance()));
+                    accounts.remove(acct);
+                    accountCombo.getSelectionModel().clearSelection();
+                    refreshCombo();
+                    log("✓ Account #" + acct.getAccountNumber() + " deleted.");
+                }
+            });
+        });
+
+        HBox buttons = new HBox(10, depositBtn, withdrawBtn, deleteBtn);
         HBox top = new HBox(10, accountCombo, refreshBtn);
 
         box.getChildren().addAll(
